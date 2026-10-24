@@ -13,6 +13,9 @@ createApp({
       progressPercent: 0,
       progressText: 'Initializing...',
 
+      isDraggingSource: false,
+      isDraggingFace: false,
+
       showSettings: false,
       settings: {
         provider: 'local', // 'local' | 'cloud_replicate' | 'custom_url'
@@ -50,6 +53,10 @@ createApp({
   },
 
   mounted() {
+    // Prevent browser from navigating away if file is dropped outside dropzone
+    window.addEventListener('dragover', (e) => e.preventDefault());
+    window.addEventListener('drop', (e) => e.preventDefault());
+
     // Load local history & settings
     const savedHistory = localStorage.getItem('faceswap_history');
     if (savedHistory) {
@@ -68,8 +75,25 @@ createApp({
 
     handleFileChange(event, type) {
       const file = event.target.files[0];
-      if (!file) return;
+      if (file) {
+        this.processFile(file, type);
+      }
+    },
 
+    handleDrop(event, type) {
+      if (type === 'source') {
+        this.isDraggingSource = false;
+      } else {
+        this.isDraggingFace = false;
+      }
+
+      const files = event.dataTransfer.files;
+      if (files && files.length > 0) {
+        this.processFile(files[0], type);
+      }
+    },
+
+    processFile(file, type) {
       if (!file.type.startsWith('image/')) {
         Swal.fire('Invalid File', 'Please select a valid image file (JPG, PNG, WEBP)', 'error');
         return;

@@ -252,6 +252,18 @@ body {
   border-color: var(--primary);
   background-color: rgba(99, 102, 241, 0.05);
 }
+.dropzone.drag-active {
+  border-color: var(--primary) !important;
+  background-color: rgba(99, 102, 241, 0.15) !important;
+  transform: scale(1.02);
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+}
+.dropzone * {
+  pointer-events: none;
+}
+.dropzone .btn-remove {
+  pointer-events: auto;
+}
 .dropzone.has-image {
   border-style: solid;
   border-color: var(--border-color);
