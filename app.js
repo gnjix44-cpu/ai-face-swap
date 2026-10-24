@@ -87,6 +87,7 @@ createApp({
         this.isDraggingFace = false;
       }
 
+      if (!event || !event.dataTransfer) return;
       const files = event.dataTransfer.files;
       if (files && files.length > 0) {
         this.processFile(files[0], type);
