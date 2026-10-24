@@ -61,7 +61,12 @@
               <h3>Original Image (Target Body)</h3>
             </div>
             
-            <div class="dropzone" :class="{'has-image': sourceImage.preview}" @click="triggerInput('sourceInput')">
+            <div class="dropzone" :class="{'has-image': sourceImage.preview, 'drag-active': isDraggingSource}" 
+                 @click="triggerInput('sourceInput')"
+                 @dragover.prevent="isDraggingSource = true"
+                 @dragenter.prevent="isDraggingSource = true"
+                 @dragleave.prevent="isDraggingSource = false"
+                 @drop.prevent="handleDrop($event, 'source')">
               <input type="file" ref="sourceInput" accept="image/*" @change="handleFileChange($event, 'source')" style="display:none" />
               
               <template v-if="!sourceImage.preview">
@@ -92,7 +97,12 @@
               <h3>Target Face (The Face to Use)</h3>
             </div>
             
-            <div class="dropzone" :class="{'has-image': faceImage.preview}" @click="triggerInput('faceInput')">
+            <div class="dropzone" :class="{'has-image': faceImage.preview, 'drag-active': isDraggingFace}" 
+                 @click="triggerInput('faceInput')"
+                 @dragover.prevent="isDraggingFace = true"
+                 @dragenter.prevent="isDraggingFace = true"
+                 @dragleave.prevent="isDraggingFace = false"
+                 @drop.prevent="handleDrop($event, 'face')">
               <input type="file" ref="faceInput" accept="image/*" @change="handleFileChange($event, 'face')" style="display:none" />
               
               <template v-if="!faceImage.preview">
