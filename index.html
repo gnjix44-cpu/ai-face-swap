@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Face Swap Playground</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%20100%22><text y=%22.9em%22 font-size=%2290%22>✨</text></svg>">
+  
+  <!-- FontAwesome & SweetAlert2 & Tailwind -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div id="app" v-cloak>
+    <!-- Navbar -->
+    <header class="navbar">
+      <div class="nav-container">
+        <div class="logo">
+          <i class="fa-solid fa-wand-magic-sparkles text-primary"></i>
+          <span>AI FaceSwap</span>
+        </div>
+        <div class="nav-actions">
+          <button class="btn btn-outline" @click="showSettings = true">
+            <i class="fa-solid fa-gear"></i> Backend Settings
+          </button>
+          <a href="https://github.com" target="_blank" class="github-badge">
+            <i class="fa-brands fa-github"></i> GitHub
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <div class="hero-content">
+        <span class="badge">Next-Gen AI Technology</span>
+        <h1>Face Swap Online Free</h1>
+        <p>Swap faces seamlessly in high quality with natural skin tone blending and facial enhancement.</p>
+        <a href="#face-swap-playground" class="btn btn-primary btn-round">
+          <i class="fa-solid fa-arrow-down"></i> Start Face Swapping
+        </a>
+      </div>
+    </section>
+
+    <!-- Playground Section -->
+    <section id="face-swap-playground" class="playground-section">
+      <div class="section-header">
+        <h2>AI Face Swap Playground</h2>
+        <p>Upload a target photo and a source face to swap</p>
+      </div>
+
+      <div class="playground-card">
+        <div class="grid-inputs">
+          
+          <!-- Box 1: Source Image (Base Photo) -->
+          <div class="upload-box">
+            <div class="box-header">
+              <span class="step-num">1</span>
+              <h3>Original Image (Target Body)</h3>
+            </div>
+            
+            <div class="dropzone" :class="{'has-image': sourceImage.preview}" @click="triggerInput('sourceInput')">
+              <input type="file" ref="sourceInput" accept="image/*" @change="handleFileChange($event, 'source')" style="display:none" />
+              
+              <template v-if="!sourceImage.preview">
+                <i class="fa-solid fa-cloud-arrow-up drop-icon"></i>
+                <p class="drop-text">Click or drag & drop photo here</p>
+                <span class="drop-subtext">JPG, PNG, WEBP up to 10MB</span>
+              </template>
+
+              <template v-else>
+                <img :src="sourceImage.preview" alt="Target preview" class="preview-img" />
+                <button class="btn-remove" @click.stop="clearImage('source')"><i class="fa-solid fa-xmark"></i></button>
+              </template>
+            </div>
+
+            <!-- Templates -->
+            <div class="templates-area">
+              <p class="templates-title">Or try sample photos:</p>
+              <div class="templates-list">
+                <img v-for="(tpl, idx) in sampleTargets" :key="idx" :src="tpl" @click="selectTemplate(tpl, 'source')" class="tpl-thumb" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Box 2: Target Face Image -->
+          <div class="upload-box">
+            <div class="box-header">
+              <span class="step-num">2</span>
+              <h3>Target Face (The Face to Use)</h3>
+            </div>
+            
+            <div class="dropzone" :class="{'has-image': faceImage.preview}" @click="triggerInput('faceInput')">
+              <input type="file" ref="faceInput" accept="image/*" @change="handleFileChange($event, 'face')" style="display:none" />
+              
+              <template v-if="!faceImage.preview">
+                <i class="fa-solid fa-user-tag drop-icon"></i>
+                <p class="drop-text">Upload face photo</p>
+                <span class="drop-subtext">Clear portrait with front-facing angle</span>
+              </template>
+
+              <template v-else>
+                <img :src="faceImage.preview" alt="Face preview" class="preview-img" />
+                <button class="btn-remove" @click.stop="clearImage('face')"><i class="fa-solid fa-xmark"></i></button>
+              </template>
+            </div>
+
+            <!-- Templates -->
+            <div class="templates-area">
+              <p class="templates-title">Or try sample faces:</p>
+              <div class="templates-list">
+                <img v-for="(tpl, idx) in sampleFaces" :key="idx" :src="tpl" @click="selectTemplate(tpl, 'face')" class="tpl-thumb" />
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Terms & Responsible AI -->
+        <div class="action-footer">
+          <label class="checkbox-container">
+            <input type="checkbox" v-model="safeNoticeAgreed" />
+            <span class="checkmark"></span>
+            <span class="checkbox-label">
+              I agree to the <a href="javascript:void(0)">Responsible AI Use Policy</a> and confirm I have consent to use these photos.
+            </span>
+          </label>
+
+          <!-- Swap Button -->
+          <button class="btn btn-primary btn-large w-full" :disabled="!canStartSwap || isProcessing" @click="startFaceSwap">
+            <template v-if="!isProcessing">
+              <i class="fa-solid fa-bolt"></i> Start Face Swapping
+            </template>
+            <template v-else>
+              <i class="fa-solid fa-spinner fa-spin"></i> {{ progressText }} ({{ progressPercent }}%)
+            </template>
+          </button>
+
+          <!-- Progress Bar -->
+          <div v-if="isProcessing" class="progress-bar-container">
+            <div class="progress-bar" :style="{ width: progressPercent + '%' }"></div>
+          </div>
+        </div>
+
+        <!-- Result Section -->
+        <div v-if="resultImage" class="result-section">
+          <hr class="divider" />
+          <div class="result-header">
+            <h3><i class="fa-solid fa-circle-check text-success"></i> Swap Result</h3>
+            <div class="result-actions">
+              <button class="btn btn-outline" @click="downloadResult">
+                <i class="fa-solid fa-download"></i> Download JPG
+              </button>
+              <button class="btn btn-outline" @click="shareResult">
+                <i class="fa-solid fa-share-nodes"></i> Share
+              </button>
+            </div>
+          </div>
+          <div class="result-container">
+            <img :src="resultImage" alt="Swapped Face Result" class="result-img" />
+          </div>
+        </div>
+
+        <!-- History -->
+        <div v-if="historyList.length > 0" class="history-section">
+          <div class="history-header">
+            <h4>Recent Swaps</h4>
+            <button class="btn-text" @click="clearHistory">Clear History</button>
+          </div>
+          <div class="history-grid">
+            <div v-for="(item, idx) in historyList" :key="idx" class="history-item" @click="resultImage = item">
+              <img :src="item" alt="History" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Settings Modal -->
+    <div v-if="showSettings" class="modal-overlay" @click.self="showSettings = false">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Backend & AI Configuration</h3>
+          <button class="btn-close" @click="showSettings = false">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-desc">
+            GitHub Pages requires a backend to process the AI models. Choose which backend to connect to:
+          </p>
+
+          <div class="form-group">
+            <label>Backend Provider Mode:</label>
+            <select v-model="settings.provider" class="form-control">
+              <option value="local">Local Python FastAPI Server (Default)</option>
+              <option value="cloud_replicate">Replicate Serverless API</option>
+              <option value="custom_url">Custom Proxy / Tunnel URL</option>
+            </select>
+          </div>
+
+          <div v-if="settings.provider === 'local'" class="info-box">
+            <p><strong>Local Backend:</strong> Jalankan script FastAPI di komputer Anda (<code>python main.py</code>).</p>
+            <p>Endpoint: <code>http://127.0.0.1:8000</code></p>
+          </div>
+
+          <div v-if="settings.provider === 'cloud_replicate'" class="form-group">
+            <label>Replicate API Token:</label>
+            <input type="password" v-model="settings.replicateToken" placeholder="r8_************************" class="form-control" />
+            <span class="help-text">Dapatkan token dari <a href="https://replicate.com" target="_blank">replicate.com</a>. Request diproses langsung di cloud tanpa butuh GPU lokal.</span>
+          </div>
+
+          <div v-if="settings.provider === 'custom_url'" class="form-group">
+            <label>Custom API URL:</label>
+            <input type="text" v-model="settings.customUrl" placeholder="https://your-tunnel.trycloudflare.com" class="form-control" />
+            <span class="help-text">URL Cloudflare Tunnel / Ngrok yang mengarah ke backend lokal Anda.</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary" @click="saveSettings">Save & Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
